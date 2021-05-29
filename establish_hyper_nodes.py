@@ -91,7 +91,8 @@ def establish(args, vani_adjs, vani_ftr, labels, y_train, y_test, y_val, train_m
         st = normal_node_num + pre_graph_sum[i]
         ed = st + hyper_nodes[i][0]
         hyper_features = features_np[st:ed]
-        clf = NearestNeighbors(n_neighbors=args.nearest_neighbor_K + 1, algorithm='ball_tree').fit(hyper_features)
+        n_neighbors = min(args.nearest_neighbor_K + 1, hyper_features.shape[0])
+        clf = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree').fit(hyper_features)
         distances, indices = clf.kneighbors(hyper_features)
 
         adjs = vani_adjs[i].copy()
@@ -134,11 +135,12 @@ def establish(args, vani_adjs, vani_ftr, labels, y_train, y_test, y_val, train_m
     hyper_node_one_hot = np.zeros((hyper_node_num, args.label_kinds), dtype=np.int32)
     y_train = np.vstack((y_train, hyper_node_one_hot))
     y_val = np.vstack((y_val, hyper_node_one_hot))
+    y_test = np.vstack((y_test, hyper_node_one_hot))
 
     print(f"label_kinds={args.label_kinds} num_supports={num_supports} input_dim={features[2][1]}")
     print(f"total_num = normal_node_num + hyper_node_num = {normal_node_num} + {hyper_node_num} = {total_num}")
 
-    return support, features, y_train, y_val, train_mask, val_mask, hyper_node_num
+    return support, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, hyper_node_num
 
 
 if __name__ == '__main__':

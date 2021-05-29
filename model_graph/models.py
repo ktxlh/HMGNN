@@ -48,6 +48,7 @@ class Model(object):
         self.optimizer = None
         self.opt_op = None
         self.evaluation = None
+        self.evaluation_reversed = None
 
     def _build(self):
         raise NotImplementedError
@@ -140,6 +141,7 @@ class HMGNN(Model):
         self.accuracy = 0
         self.opt_op = None
         self.evaluation = None
+        self.evaluation_reversed = None
         
         self.inputs = placeholders['features']
         self.num_features_nonzero = placeholders['num_features_nonzero']
@@ -183,6 +185,7 @@ class HMGNN(Model):
     def _evaluate(self):
         '''evaluation = [precision, recall, f1, tpr, tnr, preds]'''
         self.evaluation = precision_recall_f1_tpr_tnr_preds(self.outputs,self.labels, self.labels_mask)
+        self.evaluation_reversed = precision_recall_f1_tpr_tnr_preds_reversed(self.outputs,self.labels, self.labels_mask)
         eval_names = ['precision', 'recall', 'F1', 'TPR', 'TNR']
         for index in range(len(eval_names)):
             tf.summary.scalar(eval_names[index], self.evaluation[index])

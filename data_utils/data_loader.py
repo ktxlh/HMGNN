@@ -57,5 +57,5 @@ def load_data(args):
 if __name__ == '__main__':
     import hparams
     FLAGS = hparams.create()
-    FLAGS.data_dir = "../data/"
+    FLAGS.data_dir = "." + FLAGS.data_dir
     load_data(FLAGS)

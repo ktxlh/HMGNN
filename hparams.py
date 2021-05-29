@@ -6,6 +6,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 # directory
+flags.DEFINE_string('log_dir', './log/', 'log path.')
 flags.DEFINE_string('data_dir', './data/', 'data path.')
 flags.DEFINE_string('model_dir', './model/', 'model save path.')
 

@@ -77,4 +77,26 @@ def precision_recall_f1_tpr_tnr_preds(preds, labels, mask):
     F1 = (2*precision*recall) /(precision + recall)
     
     return precision, recall, F1, TP/P, TN/N, preds_bak
-       
+
+def precision_recall_f1_tpr_tnr_preds_reversed(preds, labels, mask):
+    """precision, recall, f1, score, tpr, tnr, preds with masking"""
+    preds_bak = preds
+    preds, labels = tf.argmax(preds, 1), tf.argmax(labels, 1)
+    preds, labels = tf.cast(preds, tf.float32), tf.cast(labels, tf.float32)
+    mask = tf.cast(mask, dtype=tf.float32)
+    
+    ####### N & P reversed #######
+    TN = tf.count_nonzero(preds * labels*mask)
+    TP = tf.count_nonzero((preds-1) * (labels-1)*mask)
+    FN = tf.count_nonzero(preds * (labels-1)*mask)
+    FP = tf.count_nonzero((preds-1) * labels*mask)
+    
+    N = tf.count_nonzero(labels * mask)
+    P = tf.count_nonzero((labels-1) * mask)
+    ####### N & P reversed #######
+    
+    precision = TP / (TP + FP)
+    recall = TP / (TP + FN)
+    F1 = (2*precision*recall) /(precision + recall)
+    
+    return precision, recall, F1, TP/P, TN/N, preds_bak

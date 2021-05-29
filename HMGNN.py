@@ -27,6 +27,15 @@ def evaluate(sess, model, features, support, labels, mask, placeholders):
     outs_val = sess.run([model.loss, model.accuracy, model.evaluation], feed_dict=feed_dict_val)
     return outs_val[0], outs_val[1], outs_val[2][:-1], (time.time() - t_test)
 
+def test(sess, model, features, support, labels, mask, placeholders):
+    t_test = time.time()
+    feed_dict_val = construct_feed_dict(features, support, labels, mask, placeholders)
+    feed_dict_val.update({placeholders['dropout']: 0.})
+    outs_val = sess.run([model.loss, model.accuracy, model.evaluation_reversed, model.evaluation], feed_dict=feed_dict_val)
+    accuracy = outs_val[1]
+    precision_0, recall_0, F1_0 = outs_val[2][0], outs_val[2][1], outs_val[2][2]
+    precision_1, recall_1, F1_1 = outs_val[3][0], outs_val[3][1], outs_val[3][2]
+    return accuracy, precision_0, recall_0, F1_0, precision_1, recall_1, F1_1, (time.time() - t_test)
 
 def main():
     train_begin = time.time()
@@ -44,7 +53,7 @@ def main():
     vani_adjs, vani_ftr, vani_labels, y_train, y_test, y_val, train_mask, test_mask, val_mask = load_data(FLAGS)
 
     # establish hyper nodes
-    support, features, y_train, y_val, train_mask, val_mask, hyper_node_num = \
+    support, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, hyper_node_num = \
         establish(FLAGS, vani_adjs, vani_ftr, vani_labels, y_train, y_test, y_val, train_mask, test_mask, val_mask)
 
     # nodes count
@@ -101,7 +110,7 @@ def main():
         saver = tf.train.Saver(model.vars, max_to_keep=5)
 
         # Train model
-        best_f1 = 0
+        best_f1, best_data = 0, None
         for epoch in range(FLAGS.epochs):
             epoch_begin = time.time()
             # Construct feed dictionary
@@ -136,12 +145,38 @@ def main():
                     save_name = FLAGS.model_name  # "GCN"
                 checkpoint_path = os.path.join(FLAGS.model_dir, save_name)
                 model.save(checkpoint_path, sess, epoch, saver)
+                
+                accuracy, precision_0, recall_0, F1_0, precision_1, recall_1, F1_1, test_time = \
+                    test(sess, model, features, support, y_test, test_mask, placeholders)
+                best_data = {
+                    'Test accuracy': accuracy,
+                    'Test precision 0': precision_0,
+                    'Test recall 0': recall_0,
+                    'Test F1 0': F1_0,
+                    'Test precision 1': precision_1,
+                    'Test recall 1': recall_1,
+                    'Test F1 1': F1_1,
+                }
+                print(best_data)
             print("")
     train_end_time = time.time() - train_begin_time
     print(f"finish training process, time elapsed: {train_end_time:.3f}s ...................")
 
     train_end = time.time() - train_begin
     print(f"----------------------- Total Training Time = {train_end:.3f}s----------------------------")
+    
+    # Save parameters
+    with open(os.path.join(FLAGS.log_dir, '{}-k{}-f{:.8}'.format(
+        FLAGS.data_dir.split('/')[-2],
+        FLAGS.nearest_neighbor_K,
+        best_f1
+    )), 'w') as f:
+        lines = ['{}\t{}\n'.format('best_f1', best_f1),]
+        for key in FLAGS:
+            lines.append('{}\t{}\n'.format(key, eval(f'FLAGS.{key}')))
+        for key, val in best_data.items():
+            lines.append('{}\t{}\n'.format(key, val))
+        f.writelines(lines)
 
 
 if __name__ == "__main__":

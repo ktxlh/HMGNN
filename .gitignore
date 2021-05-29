@@ -1,2 +1,6 @@
 .idea/
 tmp/
+**/__pycache__
+model/**
+data/politifact/**
+data/pheme/**
