@@ -21,6 +21,13 @@ tensorflow (>=1.12)
 pandas  
 numpy
 
+### environment setup
+```
+conda create --name hmgnn python=3.6
+conda install pip
+pip3 install -r requirements.txt
+```
+
 ## quick-start
 `python HMGNN.py`
 
@@ -58,3 +65,4 @@ The table above is showed the accuracy of HMGNN and GCN.
 The pictures show the detailed loss and accuracy curve on training and validation dataset.
 
 ![pic](./image/performance.png)
+

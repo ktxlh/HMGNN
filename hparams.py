@@ -9,6 +9,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('log_dir', './log/', 'log path.')
 flags.DEFINE_string('data_dir', './data/', 'data path.')
 flags.DEFINE_string('model_dir', './model/', 'model save path.')
+flags.DEFINE_string('bert_in', '', 'path to input from bert.')
 
 # model version
 flags.DEFINE_integer('model_version', 0, 'model version.') 
@@ -33,6 +34,7 @@ flags.DEFINE_integer('hidden4', 8, 'Number of units in hidden layer 4.')
 flags.DEFINE_integer('hidden5', 4, 'Number of units in hidden layer 5.')
 flags.DEFINE_float('dropout', 0.2, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
+flags.DEFINE_integer('n_layers', 5, 'Number of hidden layers.')
 
 # settings for attention
 flags.DEFINE_boolean('attention', True, 'whether or not add attention mechanism')

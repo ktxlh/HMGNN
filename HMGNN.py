@@ -11,9 +11,10 @@ from data_utils.data_loader import load_data
 from establish_hyper_nodes import establish
 from model_graph.models import HMGNN
 from utils import *
+import json
 
 warnings.filterwarnings("ignore")
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 seed = 123
 np.random.seed(seed)
@@ -83,7 +84,7 @@ def main():
     }
 
     # build model
-    hidden_dim = [FLAGS.hidden1, FLAGS.hidden2, FLAGS.hidden3, FLAGS.hidden4, FLAGS.hidden5]
+    hidden_dim = [FLAGS.hidden1, FLAGS.hidden2, FLAGS.hidden3, FLAGS.hidden4, FLAGS.hidden5][:FLAGS.n_layers]
     model = model_func(placeholders,
                        input_dim=FLAGS.feature_dim,
                        hidden_dim=hidden_dim,
@@ -106,11 +107,11 @@ def main():
         # Init variables
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
-        val_loss_list = []
+        train_loss_list, val_loss_list, val_acc_list = [], [], []
         saver = tf.train.Saver(model.vars, max_to_keep=5)
 
         # Train model
-        best_f1, best_data = 0, None
+        best_performance, best_data, best_ep = 0, None, -1
         for epoch in range(FLAGS.epochs):
             epoch_begin = time.time()
             # Construct feed dictionary
@@ -120,45 +121,49 @@ def main():
             train_outs = sess.run([model.opt_op, model.loss, model.accuracy, model.evaluation], feed_dict=feed_dict)
             train_loss, train_acc, train_preds, train_eval = \
                 train_outs[1], train_outs[2], train_outs[3][-1], train_outs[3][:-1]
+            train_loss_list.append(train_loss)
 
             train_time = time.time() - epoch_begin
 
             # Validation
             val_loss, val_acc, val_eval, val_time = evaluate(sess, model, features, support, y_val, val_mask, placeholders)
             val_loss_list.append(val_loss)
+            val_acc_list.append(val_acc)
 
             epoch_end = time.time() - epoch_begin
             # Print results
-            print(
-                f"Epoch:{epoch + 1:3d},   loss    acc    time, time elapsed={epoch_end:.3f}s --------")
-            print(f"Train:     {train_loss:.5f} {train_acc:.5f} {train_time:.3f}s")
-            print(f"Valid:     {val_loss:.5f} {val_acc:.5f} {val_time:.3f}s")
+            if epoch % 5 == 4:
+                print(f"Epoch:{epoch + 1:3d} \t Train loss: {train_loss:.4f} Val loss: {val_loss:.4f} \t Train acc: {train_acc:.4f} Val acc: {val_acc:.4f} \t Best ep: {best_ep + 1:4d} Best perf {best_performance:.4f}")
 
-            if FLAGS.attention and epoch > 0 and epoch % 20 == 0:
-                print(f"subgraph attention: {[_[0] for _ in sess.run(model.att)]}")
+            # if FLAGS.attention and epoch > 0 and epoch % 20 == 0:
+                # print(f"subgraph attention: {[_[0] for _ in sess.run(model.att)]}")
 
-            if val_eval[2] > best_f1:
-                best_f1 = max(val_eval[2], best_f1)
+            if val_acc > best_performance:
+                best_performance = max(val_acc, best_performance)
+            # if train_acc > best_performance:
+                # best_performance = max(train_acc, best_performance)  # to overfit
+                best_ep = epoch
                 if FLAGS.model_version >= 0:
                     save_name = FLAGS.model_name + "-Version" + str(FLAGS.model_version)
                 else:
                     save_name = FLAGS.model_name  # "GCN"
                 checkpoint_path = os.path.join(FLAGS.model_dir, save_name)
-                model.save(checkpoint_path, sess, epoch, saver)
+                # model.save(checkpoint_path, sess, epoch, saver)
                 
                 accuracy, precision_0, recall_0, F1_0, precision_1, recall_1, F1_1, test_time = \
                     test(sess, model, features, support, y_test, test_mask, placeholders)
                 best_data = {
-                    'Test accuracy': accuracy,
+                    'Best epoch      ': epoch,
+                    'Test accuracy   ': accuracy,
                     'Test precision 0': precision_0,
-                    'Test recall 0': recall_0,
-                    'Test F1 0': F1_0,
+                    'Test recall    0': recall_0,
+                    'Test F1        0': F1_0,
                     'Test precision 1': precision_1,
-                    'Test recall 1': recall_1,
-                    'Test F1 1': F1_1,
+                    'Test recall    1': recall_1,
+                    'Test F1        1': F1_1,
                 }
-                print(best_data)
-            print("")
+                print(f"Test acc {accuracy:.4f} F1-0 {F1_0:.4f} F1-1 {F1_1:.4f}")
+            # print("")
     train_end_time = time.time() - train_begin_time
     print(f"finish training process, time elapsed: {train_end_time:.3f}s ...................")
 
@@ -166,16 +171,20 @@ def main():
     print(f"----------------------- Total Training Time = {train_end:.3f}s----------------------------")
     
     # Save parameters
-    with open(os.path.join(FLAGS.log_dir, '{}-k{}-f{:.8}'.format(
-        FLAGS.data_dir.split('/')[-2],
-        FLAGS.nearest_neighbor_K,
-        best_f1
+    with open(os.path.join(FLAGS.log_dir, '{}-p{:.4}-be{}'.format(
+        FLAGS.model_name,
+        best_performance,
+        best_ep,
     )), 'w') as f:
-        lines = ['{}\t{}\n'.format('best_f1', best_f1),]
+        lines = ['{}\t{}\n'.format('best_performance', best_performance),]
         for key in FLAGS:
             lines.append('{}\t{}\n'.format(key, eval(f'FLAGS.{key}')))
         for key, val in best_data.items():
             lines.append('{}\t{}\n'.format(key, val))
+        print("======= Final Performance ======\n" + ''.join(lines))
+        lines.append("train_loss_list" + '\t' + ' '.join([str(i) for i in train_loss_list]) + '\n')
+        lines.append("val_loss_list" + '\t' + ' '.join([str(i) for i in val_loss_list]) + '\n')
+        lines.append("val_acc_list" + '\t' + ' '.join([str(i) for i in val_acc_list]) + '\n')
         f.writelines(lines)
 
 

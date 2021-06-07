@@ -1,6 +1,9 @@
 .idea/
 tmp/
 **/__pycache__
-model/**
-data/politifact/**
-data/pheme/**
+model
+data
+output
+config
+.vscode
+**/.DS_Store
