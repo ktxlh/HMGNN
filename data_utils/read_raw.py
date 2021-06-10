@@ -13,11 +13,12 @@ REAL, FAKE = 1, 0
 SEED = 123
 random.seed(SEED)
 
-def read_politifact_input(in_dir = '/rwproject/kdd-db/20-rayw1/FakeNewsNet/code/fakenewsnet_dataset/politifact'):
+def read_politifact_input(dataset='politifact'):
+    in_dir = f'/rwproject/kdd-db/20-rayw1/FakeNewsNet/code/fakenewsnet_dataset/{dataset}'
     rumorities = {'real': REAL, 'fake': FAKE}
     inpt = []
     for rumority, label in rumorities.items():
-        for news_id in tqdm(listdir(join(in_dir, rumority)), desc=f'politifact-{rumority}'):
+        for news_id in tqdm(listdir(join(in_dir, rumority)), desc=f'{dataset}-{rumority}'):
             content_fn = join(in_dir, rumority, news_id, 'news content.json')
             if not isfile(content_fn): continue
             with open(content_fn, 'r') as f:

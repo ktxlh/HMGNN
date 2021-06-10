@@ -16,7 +16,8 @@ from collections import Counter
 from os.path import join
 import numpy as np
 from tqdm import tqdm, trange
-from data_utils.read_raw import read_politifact_input, read_pheme_input
+from random import sample
+from read_raw import read_politifact_input, read_pheme_input
 from transformers import BertTokenizerFast
 
 root = "/rwproject/kdd-db/20-rayw1/"
@@ -38,8 +39,11 @@ def read_files(edge_types, edge_path, feature_paths, L, feature_lines):
             for line in lines:
                 ids = line.strip().split()
                 _add_edge(edges, t0 + ids[0], t1 + ids[1])
-        for k, v in edges.items():
+        num_edges = 0
+        for k, v in tqdm(edges.items(), desc='read edges'):
             edges[k] = list(set(v))
+            num_edges += len(edges[k])
+        print("# edges:", num_edges)
         return edges
     def read_feature_input(feature_paths, L, feature_lines):
         labels = dict()  # news_id -> int
@@ -68,7 +72,10 @@ def read_files(edge_types, edge_path, feature_paths, L, feature_lines):
     def read_text_and_convert(vocab_size=1433):
         batch_size = 256
         if 'politifact' in feature_paths[0].lower():
-            inpt = read_politifact_input()
+            inpt = read_politifact_input(dataset='politifact')
+            max_seq_len = 490
+        elif 'gossipcop' in feature_paths[0].lower():
+            inpt = read_politifact_input(dataset='gossipcop')
             max_seq_len = 490
         elif 'pheme' in feature_paths[0].lower():
             inpt = read_pheme_input()
@@ -82,7 +89,7 @@ def read_files(edge_types, edge_path, feature_paths, L, feature_lines):
         other_features = [i[3] for i in inpt]
         input_ids, input_features = [], []
         num_batches = (len(text) + batch_size - 1) // batch_size
-        for i_batch in trange(num_batches, desc=f'embed'):
+        for i_batch in trange(num_batches, desc=f'tokenize'):
             t = text[i_batch * batch_size : min((i_batch + 1) * batch_size, len(text))]
             input_id = tokenizer(t, return_tensors="np", max_length=max_seq_len, padding='max_length', truncation=True)
             input_ids.append(input_id.input_ids)
@@ -134,6 +141,25 @@ def read_politifact():
         L=7, feature_lines=[1] # 2
     ), out_path, k, n
     
+def read_gossipcop():
+    print("Reading GossipCop...")
+    out_path = root + "HMGNN/data/gossipcop/vocab_other"
+    edge_path = "/rwproject/kdd-db/20-rayw1/FakeNewsNet/graph_def/gossipcop/"
+    feature_path = "/rwproject/kdd-db/20-rayw1/FakeNewsNet/FNN_input/Gossipcop/gossipcop_200/normalized_news_nodes"
+    k = 4
+    n = 5
+    return read_files(
+        edge_types={
+            # ('n', 'n') : 'news-news edges.txt',
+            ('n', 'p') : 'news-post edges.txt',
+            ('p', 'u') : 'post-user edges.txt',
+            # ('u', 'u') : 'user-user edges.txt',  # complete graph within each post -> redundant for news
+        },
+        edge_path=edge_path,
+        feature_paths=[join(feature_path, f"batch_{i}.txt") for i in range(5)],
+        L=7, feature_lines=[1] # 2
+    ), out_path, k, n
+
 def read_pheme():
     print("Reading PHEME...")
     out_path = root + "HMGNN/data/pheme/vocab_other"
@@ -174,7 +200,7 @@ def read_buzzfeed():
 
 def convert_id(labels):
     print(f"# news: {len(labels)}")
-    return {k : id for id, k in enumerate(labels)}
+    return {k : id for id, k in enumerate(tqdm(labels, desc='convert_id'))}
     
 def density(e, v):
     # https://math.stackexchange.com/questions/1526372/what-is-the-definition-of-the-density-of-a-graph/1526421
@@ -193,7 +219,7 @@ def get_k_hop_neighbors(edges, k, ids, n):
             if n0 != root and n0[0] == 'n':
                 neighbors.add(n0)
             if level < k and n0 in edges.keys():
-                for n1 in edges[n0]:
+                for n1 in edges[n0] if len(edges[n0]) < 256 else sample(edges[n0], 256):  # Aviod super long sequence
                     bfs_queue.append((n1, level + 1))
         return neighbors
     edges_mat = [[], []]
@@ -208,7 +234,7 @@ def get_k_hop_neighbors(edges, k, ids, n):
 
 def convert_labels(labels, ids):
     labels_mat = np.zeros((len(ids), 2), dtype=np.int32)
-    for n0, l in labels.items():
+    for n0, l in tqdm(labels.items(), desc='convert_labels'):
         labels_mat[ids[n0], l] = 1
     assert all(labels_mat.sum(axis=-1) == 1)
     return labels_mat
@@ -216,7 +242,7 @@ def convert_labels(labels, ids):
 def convert_features(features, ids):
     v = [v for v in features.values()][0]
     features_mat = np.zeros((len(ids), len(v)), dtype=np.float32)
-    for n0, v in features.items():
+    for n0, v in tqdm(features.items(), 'convert_features'):
         features_mat[ids[n0]] = v
     return features_mat
 
@@ -234,7 +260,7 @@ def save_files(out_path, labels, features, edges_mat, ids):
         for k, v in ids.items():
             ids_str[v] = news_id_map[int(k[1:])]
     else:
-        for k, v in ids.items():
+        for k, v in tqdm(ids.items(), desc='ids_str'):
             ids_str[v] = k[1:]
     with open(join(out_path, 'news_id.txt'), 'w') as f:
         f.write('\n'.join(ids_str) + '\n')
@@ -245,7 +271,7 @@ def save_files(out_path, labels, features, edges_mat, ids):
         f.write('feature_dim: {}\n'.format(features.shape[1]))
 
 if __name__ == "__main__":
-    for f in [read_pheme, read_politifact]:  # read_buzzfeed
+    for f in [read_gossipcop]:  # read_buzzfeed, read_pheme, read_politifact
         (edges, features, labels), out_path, k, n = f()
         ids = convert_id(labels)
         edges_mat = get_k_hop_neighbors(edges, k, ids, n)

@@ -1,0 +1,42 @@
+finish training process, time elapsed: 566.813s ...................
+----------------------- Total Training Time = 573.203s----------------------------
+======= Final Performance ======
+best_performance        0.9415987730026245
+log_dir ./log/
+data_dir        ./data/gossipcop/vocab_other/
+model_dir       ./model/gossipcop/
+bert_in 
+model_version   3
+model_name      gossipcop-vocab_other-h5-k20-dr0.5-wd0.0005-lr0.005-ep500
+model_date      2021-06-09 17:41:02
+feature_dim     1438
+label_kinds     2
+train_ratio     0.72
+test_ratio      0.1
+val_ratio       0.18
+reweight_adj    False
+epochs  500
+learning_rate   0.005
+hidden1 64
+hidden2 32
+hidden3 16
+hidden4 8
+hidden5 4
+dropout 0.5
+weight_decay    0.0005
+n_layers        5
+attention       True
+residual        True
+multi_weight    False
+adj_power       1
+minimum_subgraph_size   5
+nearest_neighbor_K      20
+beta    0.5
+Best epoch              359
+Test accuracy           0.9390962719917297
+Test precision 0        0.8755020080321285
+Test recall    0        0.8755020080321285
+Test F1        0        0.8755020080321284
+Test precision 1        0.9596879063719116
+Test recall    1        0.9596879063719116
+Test F1        1        0.9596879063719116

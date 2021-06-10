@@ -1,0 +1,41 @@
+----------------------- Total Training Time = 6.142s----------------------------
+======= Final Performance ======
+best_performance        0.75086510181427
+log_dir ./log/
+data_dir        ./data/pheme/vocab/
+model_dir       ./model/pheme/
+bert_in 
+model_version   3
+model_name      pheme-vocab-h3-k6-dr0.2-wd0.0005-lr0.03-ep40
+model_date      2021-06-06 17:50:34
+feature_dim     1433
+label_kinds     2
+train_ratio     0.72
+test_ratio      0.1
+val_ratio       0.18
+reweight_adj    False
+epochs  40
+learning_rate   0.03
+hidden1 64
+hidden2 32
+hidden3 16
+hidden4 8
+hidden5 4
+dropout 0.2
+weight_decay    0.0005
+n_layers        3
+attention       True
+residual        True
+multi_weight    False
+adj_power       1
+minimum_subgraph_size   5
+nearest_neighbor_K      6
+beta    0.5
+Best epoch              35
+Test accuracy           0.766718327999115
+Test precision 0        0.6844262295081968
+Test recall    0        0.6958333333333333
+Test F1        0        0.690000826446280993
+Test precision 1        0.8170426065162907
+Test recall    1        0.8089330024813896
+Test F1        1        0.81209675810473815

@@ -4,6 +4,5 @@ tmp/
 model
 data
 output
-config
 .vscode
 **/.DS_Store

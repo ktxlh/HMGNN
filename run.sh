@@ -4,11 +4,12 @@
     # foreach LEARNING_RATE (0.01 0.001)  # 0.001
         # foreach NEAREST_NEIGHBOR_K (3 7 11)
 
-        set DATASET="pheme"
+        # set DATASET="pheme"
         # set DATASET="politifact"
+        set DATASET="gossipcop"
         # set DATASET="buzzfeed"
         set LABEL_KINDS=2
-        if ($DATASET == "politifact") then
+        if ($DATASET == "politifact" || $DATASET == "gossipcop") then
             # set FEATURE_DIM=773
             # set BERT_IN="/rwproject/kdd-db/20-rayw1/FakeNewsNet/code/fakenewsnet_dataset/politifact"
             # set FEATURE_DIM=768
@@ -33,12 +34,12 @@
         set TEST_RATIO=0.1
 
         set N_LAYERS=5
-        set NEAREST_NEIGHBOR_K=10
-        set DROPOUT=0.2
+        set NEAREST_NEIGHBOR_K=20
+        set DROPOUT=0.5
         # Weight for L2 loss on embedding matrix. Defaults to 5e-4
         set WEIGHT_DECAY=0.001
-        set LEARNING_RATE=0.03
-        set EPOCHS=200
+        set LEARNING_RATE=0.01
+        set EPOCHS=500
 
         # set MODEL_NAME="$DATASET-bertin-k$NEAREST_NEIGHBOR_K-dr$DROPOUT-wd$WEIGHT_DECAY-lr$LEARNING_RATE-ep$EPOCHS"
         set MODEL_NAME="$DATASET-vocab_other-h$N_LAYERS-k$NEAREST_NEIGHBOR_K-dr$DROPOUT-wd$WEIGHT_DECAY-lr$LEARNING_RATE-ep$EPOCHS"

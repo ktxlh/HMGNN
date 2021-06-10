@@ -1,0 +1,39 @@
+======= Final Performance ======
+best_performance        0.8333333134651184
+log_dir ./log/
+data_dir        ./data/buzzfeed/
+model_dir       ./model/buzzfeed/
+bert_in 
+model_version   3
+model_name      buzzfeed-k7-dr0.6-wd0.05-lr0.001-ep1000
+model_date      2021-06-05 20:56:15
+feature_dim     768
+label_kinds     2
+train_ratio     0.6
+test_ratio      0.2
+val_ratio       0.2
+reweight_adj    False
+epochs  1000
+learning_rate   0.001
+hidden1 128
+hidden2 48
+hidden3 16
+hidden4 8
+hidden5 4
+dropout 0.6
+weight_decay    0.05
+attention       True
+residual        True
+multi_weight    False
+adj_power       1
+minimum_subgraph_size   5
+nearest_neighbor_K      7
+beta    0.5
+Best epoch              4
+Test accuracy           0.7777777910232544
+Test precision 0        0.8
+Test recall    0        0.8
+Test F1        0        0.8000000000000002
+Test precision 1        0.75
+Test recall    1        0.75
+Test F1        1        0.75
